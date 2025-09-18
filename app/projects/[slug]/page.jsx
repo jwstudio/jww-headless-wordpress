@@ -1,10 +1,11 @@
+// app/projects/[slug]/page.jsx - Update your existing project page
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
 async function getProject(slug) {
   try {
-    // Get basic project data
-    const res = await fetch(`${process.env.WORDPRESS_API_URL}/projects?slug=${slug}&_embed`, {
+    // Get project data with ACF fields (including SEO)
+    const res = await fetch(`${process.env.WORDPRESS_API_URL}/projects?slug=${slug}&_embed&acf=true`, {
       next: { revalidate: 60 }
     })
    
@@ -14,43 +15,16 @@ async function getProject(slug) {
     
     const project = projects[0]
     
-    // Try to get RankMath SEO data using their dedicated endpoint
-    let seoData = null
-    try {
-      const baseUrl = process.env.WORDPRESS_API_URL.replace('/wp-json/wp/v2', '')
-      const projectUrl = `${process.env.NEXT_PUBLIC_SITE_URL || baseUrl}/projects/${slug}`
-      
-      console.log('Trying RankMath endpoint for:', projectUrl)
-      
-      const seoRes = await fetch(`${baseUrl}/wp-json/rankmath/v1/getHead?url=${encodeURIComponent(projectUrl)}`, {
-        next: { revalidate: 60 }
-      })
-      
-      if (seoRes.ok) {
-        const seoResponse = await seoRes.json()
-        console.log('RankMath API Response:', seoResponse)
-        
-        // Extract title, description, and keywords from the HTML head
-        if (seoResponse.head) {
-          const titleMatch = seoResponse.head.match(/<title[^>]*>(.*?)<\/title>/i)
-          const descMatch = seoResponse.head.match(/<meta name="description" content="([^"]*)"[^>]*>/i)
-          const keywordsMatch = seoResponse.head.match(/<meta name="keywords" content="([^"]*)"[^>]*>/i)
-          
-          seoData = {
-            title: titleMatch ? titleMatch[1] : null,
-            description: descMatch ? descMatch[1] : null,
-            keywords: keywordsMatch ? keywordsMatch[1] : null
-          }
-        }
-      }
-    } catch (seoError) {
-      console.log('RankMath API not available:', seoError.message)
-    }
-    
     return {
       ...project,
       featured_media_url: project._embedded?.['wp:featuredmedia']?.[0]?.source_url || null,
-      seo: seoData
+      // Add SEO data from ACF fields
+      seo: {
+        title: project.acf?.meta_title || project.title?.rendered,
+        description: project.acf?.meta_description || '',
+        noindex: project.acf?.no_index || false,
+        nofollow: project.acf?.no_follow || false
+      }
     }
   } catch (error) {
     console.error('Error fetching project:', error)
@@ -58,9 +32,9 @@ async function getProject(slug) {
   }
 }
 
-// Generate metadata for each project page
+// Generate metadata using ACF SEO fields instead of RankMath
 export async function generateMetadata({ params }) {
-  const { slug } = await params  // Fix the params await issue
+  const { slug } = await params
   const project = await getProject(slug)
   
   if (!project) {
@@ -70,40 +44,42 @@ export async function generateMetadata({ params }) {
     }
   }
 
-  // Use RankMath data if available, fallback to WordPress defaults
-  const seoTitle = project.seo?.title || project.title.rendered
-  const seoDescription = project.seo?.description || ''
-  const seoKeywords = project.seo?.keywords || ''
-  
-  console.log('Final SEO values:', { seoTitle, seoDescription, seoKeywords })
-  
-  return {
-    title: seoTitle,
-    description: seoDescription,
-    keywords: seoKeywords,
+  const metadata = {
+    title: project.seo.title,
+    description: project.seo.description,
     openGraph: {
-      title: seoTitle,
-      description: seoDescription,
-      images: (project.seo?.ogImage || project.featured_media_url) ? [
+      title: project.seo.title,
+      description: project.seo.description,
+      images: project.featured_media_url ? [
         {
-          url: project.seo?.ogImage || project.featured_media_url,
+          url: project.featured_media_url,
           width: 1200,
           height: 630,
-          alt: seoTitle,
+          alt: project.seo.title,
         }
       ] : [],
     },
     twitter: {
       card: 'summary_large_image',
-      title: seoTitle,
-      description: seoDescription,
-      images: (project.seo?.ogImage || project.featured_media_url) ? [project.seo?.ogImage || project.featured_media_url] : [],
+      title: project.seo.title,
+      description: project.seo.description,
+      images: project.featured_media_url ? [project.featured_media_url] : [],
     },
   }
+
+  // Add robots meta if needed
+  if (project.seo.noindex) {
+    metadata.robots = {
+      index: false,
+      follow: !project.seo.nofollow
+    }
+  }
+
+  return metadata
 }
 
 export default async function ProjectPage({ params }) {
-  const { slug } = await params  // Fix the params await issue
+  const { slug } = await params
   const project = await getProject(slug)
  
   if (!project) {
@@ -150,3 +126,4 @@ export async function generateStaticParams() {
     return []
   }
 }
+

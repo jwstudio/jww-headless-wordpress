@@ -11,13 +11,6 @@ const inter = Inter({
     variable: '--font-inter',
 })
 
-export const metadata = {
-    title: {
-        template: '%s | Netlify',
-        default: 'Netlify Starter'
-    }
-};
-
 export default function RootLayout({ children }) {
     return (
         <html lang="en" className={inter.variable}>

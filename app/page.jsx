@@ -1,27 +1,44 @@
-// app/page.jsx - Updated homepage
+// app/page.jsx - Homepage with SEO
 import { getPageBySlug, getProjects } from '../lib/wordpress'
 import FlexibleContent from '../components/FlexibleContent'
-import ProjectGrid from '../components/ProjectGrid'
+
+// Generate metadata for homepage
+export async function generateMetadata() {
+  const homePage = await getPageBySlug('/')
+  
+  if (!homePage) {
+    return {
+      title: 'Home',
+      description: 'Welcome to my website'
+    }
+  }
+
+  const metadata = {
+    title: homePage.seo.title,
+    description: homePage.seo.description,
+  }
+
+  // Add robots meta if needed
+  if (homePage.seo.noindex) {
+    metadata.robots = {
+      index: false,
+      follow: !homePage.seo.nofollow
+    }
+  }
+
+  return metadata
+}
 
 export default async function HomePage() {
-  const [homePage, projects] = await Promise.all([
-    getPageBySlug('/'), // Will automatically convert to 'home'
-    getProjects()
-  ])
+  const homePage = await getPageBySlug('/')
   
   return (
-    <div className="container py-5">
+    <div className="container mx-auto px-4 py-8">
       {/* Render flexible content */}
       <FlexibleContent 
         layouts={homePage?.flexibleContent || []} 
-        //debug={process.env.NODE_ENV === 'development'}
         debug={false}
       />
-      
-      {/* Show projects if available */}
-      {projects.length > 0 && (
-        <ProjectGrid projects={projects} />
-      )}
     </div>
   )
 }

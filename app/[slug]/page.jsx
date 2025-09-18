@@ -1,7 +1,34 @@
-// app/[slug]/page.jsx - Dynamic page handler
+// app/[slug]/page.jsx - Dynamic pages with SEO
 import { getPageBySlug } from '../../lib/wordpress'
 import FlexibleContent from '../../components/FlexibleContent'
 import { notFound } from 'next/navigation'
+
+// Generate metadata for dynamic pages
+export async function generateMetadata({ params }) {
+  const page = await getPageBySlug(params.slug)
+  
+  if (!page) {
+    return {
+      title: 'Page Not Found',
+      description: 'The requested page could not be found.'
+    }
+  }
+
+  const metadata = {
+    title: page.seo.title,
+    description: page.seo.description,
+  }
+
+  // Add robots meta if needed
+  if (page.seo.noindex) {
+    metadata.robots = {
+      index: false,
+      follow: !page.seo.nofollow
+    }
+  }
+
+  return metadata
+}
 
 export default async function DynamicPage({ params }) {
   const page = await getPageBySlug(params.slug)
@@ -11,21 +38,24 @@ export default async function DynamicPage({ params }) {
   }
   
   return (
-    <div className="container py-5">
+    <div className="container mx-auto px-4 py-8">
       {/* Page title */}
-      <h1 className="display-4 fw-bold mb-5">
+      <h1 className="text-4xl font-bold mb-8">
         {page.title?.rendered || 'Untitled Page'}
       </h1>
       
       {/* Flexible content */}
       <FlexibleContent 
         layouts={page.flexibleContent || []} 
-        debug={process.env.NODE_ENV === 'development'}
+        debug={false}
       />
       
       {/* Regular page content if no flexible content */}
       {(!page.flexibleContent || page.flexibleContent.length === 0) && page.content?.rendered && (
-        <div dangerouslySetInnerHTML={{ __html: page.content.rendered }} />
+        <div 
+          className="prose max-w-none"
+          dangerouslySetInnerHTML={{ __html: page.content.rendered }} 
+        />
       )}
     </div>
   )
