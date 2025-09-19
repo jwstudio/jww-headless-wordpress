@@ -1,11 +1,15 @@
 // components/FlexibleContent/index.jsx - Main flexible content renderer
 import HeroLayout from './layouts/HeroLayout'
+import ProjectsLayout from './layouts/ProjectsLayout'
+import SkillsLayout from './layouts/SkillsLayout'
 import ProjectSkillsLayout from './layouts/ProjectSkillsLayout'
 import TextBlockLayout from './layouts/TextBlockLayout'
 import UnknownLayout from './layouts/UnknownLayout'
 
 const layoutComponents = {
   hero: HeroLayout,
+  projects: ProjectsLayout,
+  skills: SkillsLayout,
   project_skills: ProjectSkillsLayout,
   text_block: TextBlockLayout
 }

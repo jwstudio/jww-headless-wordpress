@@ -38,12 +38,8 @@ export default async function DynamicPage({ params }) {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Page title */}
-      <h1 className="text-4xl font-bold mb-8">
-        {page.title?.rendered || 'Untitled Page'}
-      </h1>
-      
+    <div className="mx-auto py-8">
+
       {/* Flexible content */}
       <FlexibleContent 
         layouts={page.flexibleContent || []} 

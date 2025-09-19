@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import netlifyLogo from 'public/netlify-logo.svg';
 import githubLogo from 'public/images/github-mark-white.svg';
+import { Logo } from './logo';
 
 const navItems = [
     { linkText: 'Services', href: '/services/' },
@@ -21,9 +22,7 @@ export function Header() {
     return (
         <nav className="flex items-center justify-between pt-6 pb-12 sm:pt-12 md:pb-24">
             {/* Logo */}
-            <Link href="/" onClick={closeMenu} className="cursor-pointer font-bold no-underline text-xl">
-                James Whitby Web
-            </Link>
+            <Logo />
 
             {/* Desktop Navigation */}
             {!!navItems?.length && (
@@ -41,12 +40,12 @@ export function Header() {
                 </ul>
             )}
 
-            {/* Desktop GitHub Link */}
+            {/* Contact */}
             <Link
                 href="/contact/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden lg:inline-flex cursor-pointer bg-white text-black no-underline py-2 px-4 rounded transition-colors items-center"
+                className="hidden md:inline-flex cursor-pointer bg-white text-black no-underline py-2 px-4 rounded transition-colors items-center"
             >
                 Contact Me
             </Link>
